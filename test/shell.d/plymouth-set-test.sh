@@ -79,16 +79,16 @@ cat >"$stub_dir/omarchy-plymouth-switcher" <<'STUB'
 printf '%s\n' "$OMARCHY_TEST_UNLOCK_NAME"
 STUB
 
-# Stands in for the real wrapper, which is a shell-string API: it interpolates
-# "$*" into a script and hands that to `bash -c`. The grep below is what keeps
-# this stub honest if the wrapper ever stops working that way.
+# Stands in for the real wrapper, which is an argv API: a static script runs the
+# caller's words through "$@" without ever rebuilding them into shell source.
+# The grep below is what keeps this stub honest if that ever changes back.
 cat >"$stub_dir/omarchy-launch-floating-terminal-with-presentation" <<'STUB'
 #!/bin/bash
-exec bash -c "omarchy-show-logo; $*; omarchy-show-done"
+exec bash -c 'omarchy-show-logo; "$@"; omarchy-show-done' bash "$@"
 STUB
 
-grep -Fq 'bash -c "$presentation_script"' "$ROOT/bin/omarchy-launch-floating-terminal-with-presentation" ||
-  fail "the presentation wrapper still runs its argument as a shell string, as the stub above assumes"
+grep -Fq 'bash -c "$script" bash "$@"' "$ROOT/bin/omarchy-launch-floating-terminal-with-presentation" ||
+  fail "the presentation wrapper still passes its arguments as argv, as the stub above assumes"
 
 # Records what actually arrived, so a name that survived as data is told apart
 # from one that arrived split or partly eaten.
